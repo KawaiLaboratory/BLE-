@@ -6,71 +6,220 @@
 #include <numeric>
 #include <thread>
 #include <unistd.h>
-#include <random>
+#include <fstream>
+#include <cmath>
+#include <algorithm>
+#include <vector>
 
 using namespace std;
 
 const static char mac[18] = "D0:01:00:3E:64:4D";    // Beacon's Mac address
-const static int  width   = 40;                     // filter's max width
+const static int  width   = 15;                     // filter's max width
 
-int hci0_rssi = 0;
+double hci0_rssi = 0;
+double hci1_rssi = 0;
+double hci2_rssi = 0;
+
+bool hci0_flg = false;
+bool hci1_flg = false;
+bool hci2_flg = false;
+
+double diff_t(time_t start, time_t end){
+    return (double)(end - start);
+}
 
 void BLE_hci0(){
     char s[256];                                        // Bluetooth's Data
     char c[256];                                        // Command
     int rssi = 0;                                       // RSSI
     int num = 0;                                        // SAMPLE's count
-    bool find_flg = false;                              // BLE Tag FLAG
     deque<int> samples;                                 // SAMPLE
     FILE *fp;                                           // hcidump Command
+    bool flg = false;
+
+    // recording
+    time_t t_zero = time(NULL);
+    ofstream log;
+    log.open("csvs/hci0.csv", ios::trunc);
+    log << "time, rssi" << endl;
+
+    system("sudo hcitool -i hci0 lescan --pa --du > /dev/null &");
 
     while(true){
-        sleep(1);
-
-        system("sudo hcitool -i hci0 lescan --pa --du > /dev/null &");
         fp=popen("sudo hcidump -i hci0","r");
+        flg = false;
 
-        find_flg = false;
         while(fp){
             fgets(s, 256, fp);
             if(strncmp(&s[4], "LE Advertising Report", 21) == 0){
                 for(int i = 0; i < 6; i++){
                     fgets(s, 256, fp);
                     if(i == 1){
-                        if(strncmp(&s[13], mac, 17) == 0){
-                            find_flg = true;
-                        }
+                        if(strncmp(&s[13], mac, 17) == 0) flg = true;
                     }
                 }
-                if(find_flg){
-                    break;
-                }
+                if(flg) break;
             }
         }
 
         pclose(fp);
-        system("sudo hcitool -i hci0 cmd 08 000c 00 03 > /dev/null");
-        system("sudo kill `pidof hcitool` > /dev/null");
 
         rssi = atoi(&s[12]);
+
+        // recording
+        log << diff_t(t_zero, time(NULL)) << "," << rssi << endl;
+
         if(samples.size() > width){
             samples.pop_front();
+            hci0_flg = true;
         }
         samples.push_back(rssi);
 
-        hci0_rssi = accumulate(samples.begin(), samples.end(), 0) / samples.size();
-        cout << hci0_rssi << "*" << endl;
+        hci0_rssi = accumulate(samples.begin(), samples.end(), 0.0) / samples.size();
     }
+    log.close();
 }
 
-int main(int argc,char **argv){
+void BLE_hci1(){
+    char s[256];                                        // Bluetooth's Data
+    char c[256];                                        // Command
+    int rssi = 0;                                       // RSSI
+    int num = 0;                                        // SAMPLE's count
+    deque<int> samples;                                 // SAMPLE
+    FILE *fp;                                           // hcidump Command
+    bool flg = false;
+
+    // recording
+    time_t t_zero = time(NULL);
+    ofstream log;
+    log.open("csvs/hci1.csv", ios::trunc);
+    log << "time, rssi" << endl;
+    system("sudo hcitool -i hci1 lescan --pa --du > /dev/null &");
+
+    while(true){
+        fp=popen("sudo hcidump -i hci1","r");
+        flg = false;
+
+        while(fp){
+            fgets(s, 256, fp);
+            if(strncmp(&s[4], "LE Advertising Report", 21) == 0){
+                for(int i = 0; i < 6; i++){
+                    fgets(s, 256, fp);
+                    if(i == 1){
+                        if(strncmp(&s[13], mac, 17) == 0) flg = true;
+                    }
+                }
+                if(flg) break;
+            }
+        }
+
+        pclose(fp);
+
+        rssi = atoi(&s[12]);
+
+        // recording
+        log << diff_t(t_zero, time(NULL)) << "," << rssi << endl;
+
+        if(samples.size() > width){
+            samples.pop_front();
+            hci1_flg = true;
+        }
+        samples.push_back(rssi);
+
+        hci1_rssi = accumulate(samples.begin(), samples.end(), 0.0) / samples.size();
+    }
+    log.close();
+}
+
+void BLE_hci2(){
+    char s[256];                                        // Bluetooth's Data
+    char c[256];                                        // Command
+    int rssi = 0;                                       // RSSI
+    int num = 0;                                        // SAMPLE's count
+    deque<int> samples;                                 // SAMPLE
+    FILE *fp;                                           // hcidump Command
+    bool flg = false;
+
+    // recording
+    time_t t_zero = time(NULL);
+    ofstream log;
+    log.open("csvs/hci2.csv", ios::trunc);
+    log << "time, rssi" << endl;
+
+    system("sudo hcitool -i hci2 lescan --pa --du > /dev/null &");
+
+    while(true){
+        fp=popen("sudo hcidump -i hci2","r");
+        flg = false;
+
+        while(fp){
+            fgets(s, 256, fp);
+            if(strncmp(&s[4], "LE Advertising Report", 21) == 0){
+                for(int i = 0; i < 6; i++){
+                    fgets(s, 256, fp);
+                    if(i == 1){
+                        if(strncmp(&s[13], mac, 17) == 0) flg = true;
+                    }
+                }
+                if(flg) break;
+            }
+        }
+
+        pclose(fp);
+
+        rssi = atoi(&s[12]);
+
+        // recording
+        log << diff_t(t_zero, time(NULL)) << "," << rssi << endl;
+
+        if(samples.size() > width){
+            samples.pop_front();
+            hci2_flg = true;
+        }
+        samples.push_back(rssi);
+
+        hci2_rssi = accumulate(samples.begin(), samples.end(), 0.0) / samples.size();
+    }
+    log.close();
+}
+
+
+int main(int argc, char **argv){
     thread hci0(BLE_hci0);
+    thread hci1(BLE_hci1);
+    thread hci2(BLE_hci2);
+
+    ofstream log;
+    int count = 0;
+    log.open("csvs/rssi.csv", ios::trunc);
+    log << "hci0,hci1,hci2" << endl;
 
     hci0.detach();
-    while(true){
+    hci1.detach();
+    hci2.detach();
+
+    while(count < 60){
         sleep(1);
-        cout << hci0_rssi << endl;
+        log << hci0_rssi << ",";
+        log << hci1_rssi << ",";
+        log << hci2_rssi;
+        if(hci0_flg && hci1_flg && hci2_flg){
+            log << "," << "*";
+        }
+        log << endl;
+
+
+        cout << hci0_rssi << ",";
+        cout << hci1_rssi << ",";
+        cout << hci2_rssi << endl;
+
+        count++;
     }
 
+    log.close();
+    system("sudo hcitool -i hci0 cmd 08 000c 00 01 > /dev/null");
+    system("sudo hcitool -i hci1 cmd 08 000c 00 01 > /dev/null");
+    system("sudo hcitool -i hci2 cmd 08 000c 00 01 > /dev/null");
+    system("sudo kill `pidof hcitool` > /dev/null");
     return 0;
 }
