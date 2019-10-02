@@ -192,7 +192,7 @@ int main(int argc, char **argv){
     ofstream log;
     int count = 0;
     log.open("csvs/rssi.csv", ios::trunc);
-    log << "hci0,hci1,hci2" << endl;
+    log << "count, hci0, hci1, hci2" << endl;
 
     hci0.detach();
     hci1.detach();
@@ -200,6 +200,7 @@ int main(int argc, char **argv){
 
     while(count < 60){
         sleep(1);
+        log << count     << ",";
         log << hci0_rssi << ",";
         log << hci1_rssi << ",";
         log << hci2_rssi;
