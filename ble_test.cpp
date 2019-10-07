@@ -20,10 +20,6 @@ double hci0_rssi = 0;
 double hci1_rssi = 0;
 double hci2_rssi = 0;
 
-bool hci0_flg = false;
-bool hci1_flg = false;
-bool hci2_flg = false;
-
 double diff_t(time_t start, time_t end){
     return (double)(end - start);
 }
@@ -71,7 +67,6 @@ void BLE_hci0(){
 
         if(samples.size() > width){
             samples.pop_front();
-            hci0_flg = true;
         }
         samples.push_back(rssi);
 
@@ -122,7 +117,6 @@ void BLE_hci1(){
 
         if(samples.size() > width){
             samples.pop_front();
-            hci1_flg = true;
         }
         samples.push_back(rssi);
 
@@ -174,7 +168,6 @@ void BLE_hci2(){
 
         if(samples.size() > width){
             samples.pop_front();
-            hci2_flg = true;
         }
         samples.push_back(rssi);
 
@@ -192,7 +185,7 @@ int main(int argc, char **argv){
     ofstream log;
     int count = 0;
     log.open("csvs/rssi.csv", ios::trunc);
-    log << "count, hci0, hci1, hci2, flg" << endl;
+    log << "count, hci0, hci1, hci2" << endl;
 
     hci0.detach();
     hci1.detach();
@@ -204,9 +197,6 @@ int main(int argc, char **argv){
         log << hci0_rssi << ",";
         log << hci1_rssi << ",";
         log << hci2_rssi;
-        if(hci0_flg && hci1_flg && hci2_flg){
-            log << "," << "*";
-        }
         log << endl;
 
 
