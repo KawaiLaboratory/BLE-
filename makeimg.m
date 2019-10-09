@@ -2,50 +2,31 @@
 clear;
 close all;
 
-filename = "40-70-100";
-range    = 3;
+dirname = 'csvs\';
+folder  = dir(dirname);
+marks   = ["o", "*", "s"];
+lines   = ["-", "--", "-."];
 
-%% 表生成
-for i = 1:range
-    % 移動平均読み込み(hci0, hci1, hci2)
-    folderpath = strcat("csvs\", filename, "-", num2str(i));
-    RSSIs = readtable(folderpath + "\rssi.csv");
-    
-    % 各RSSI生データ読み込み(time, rssi)
-    hci0 = readtable(folderpath + "\hci0.csv");
-    hci1 = readtable(folderpath + "\hci1.csv");
-    hci2 = readtable(folderpath + "\hci2.csv");
-    
-    figure('Name', strcat(filename, "-", int2str(i)))
-    hold on;
-    for j = 0:2
-        % 生データ描画
-        if j == 0
-            mark = "o";
-            line = "-";
-        elseif j == 1
-            mark = "*";
-            line = "--";
-        else
-            mark = "s";
-            line = "-.";
-        end
-        scatter(eval("hci" + int2str(j) + ".time"), eval("hci" + int2str(j) + ".rssi"), mark)
-
+for i=1:length(folder)
+    if folder(i).name ~= "." && folder(i).name ~= ".."
+        figure('Name', strcat(folder(i).name));
+        hold on;
         
-        % 移動平均描画
-        plot(RSSIs.count, eval("RSSIs.hci" + int2str(j)), line)
+        csvs = dir(strcat(dirname, folder(i).name, '\*.csv'));
+        for j=1:length(csvs)
+            eval(strcat(strtok(csvs(j).name, "."), "=readtable(strcat(dirname, folder(i).name, '\', csvs(j).name));"));
+        end
+        
+        for j=0:2
+            scatter(eval("hci" + int2str(j) + ".time"), eval("hci" + int2str(j) + ".rssi"), marks(j+1));
+            plot(rssi.count, eval("rssi.hci" + int2str(j)), lines(j+1));
+        end
+        xlabel('t[s]') ;
+        ylabel('RSSI[dBm]');
+        xlim([0, 60]);
+        ylim([-90, 0]);
+        legend("HCI0 Received data", "HCI0 Moving average", "HCI1 Received data", "HCI1 Moving average", "HCI2 Received data", "HCI2 Moving average");
+        
+        % saveas(gcf, strcat("img\", filename, "-", int2str(i)), "epsc")
     end
-    
-                
-    % ラベル等
-    xlabel('t[s]') ;
-    ylabel('RSSI[dBm]');
-    xlim([0, 60]);
-    ylim([-90, 0]);
-    % lsline;
-    legend("HCI0 Received data", "HCI0 Moving average", "HCI1 Received data", "HCI1 Moving average", "HCI2 Received data", "HCI2 Moving average");
-
-    saveas(gcf, strcat("img\", filename, "-", int2str(i)), "epsc")
 end
-
